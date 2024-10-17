@@ -1,4 +1,4 @@
-clc;
+clc;22
 close all;
 
 %% add E I l A
