@@ -44,5 +44,5 @@ U1=U(:,1:r)
 U2=U(:,r+1:end);        % U1 is C(A_1g); U2 is N(A_1g') mechanism mode
 % S1=S(1:r,1:r);                      % S1 is singular value of A_1g
 V1=V(:,1:r);V2=V(:,r+1:end);       % V1 is C(A_1g'); V2 is N(A_1g) self stress mode
-
+rref(U2')
 %% multipule members: structures;
