@@ -11,7 +11,7 @@ N2=N(1:2,:);                 %3D to 2D
 n2=N2(:);
 % Manually specify connectivity indices.
 C_s_in = [1 2;2 3;3 4;4 1];  % This is indicating that string connection
-C_b_in = [1 5;2 5;3 5;4 5];  % Similarly, this is saying bar 1 connects node 1 to node 2,
+C_b_in = [1 5;2 5;5 3;5 4];  % Similarly, this is saying bar 1 connects node 1 to node 2,
 
 % Convert the above matrices into full connectivity matrices.
 C_b = tenseg_ind2C(C_b_in,N);%%
@@ -61,11 +61,12 @@ E_eri=cell(ne,1);               % \theta in a member
 for i=1:ne
   E_eri{i}=zeros(2,n_cr) ; 
 
-C_temp=C_abs;
+C_temp=C;
 C_temp(i,:)=C_temp(i,:)*2;
 [~,~,v]=find(C_temp);
-row_num=find(v==2);
-E_eri{i}=E_nr(row_num,:);
+row_num1=find(v==-2);
+row_num2=find(v==2);
+E_eri{i}=E_nr([row_num1,row_num2],:);
 end
 
 
@@ -171,9 +172,16 @@ A_tsgb=[A_tsgb1;A_tsgb2];
 V2_loc=blkdiag(T_ei{:})'*V2;                % This is the stress in local coordinated.
 
 %%  Plot the stress in self equilibrium tsgb.
-stress_m=kron(eye(ne),[zeros(2,4),eye(2)])*V2(:,1);     % Moment.
-strut_s.stress=stress_m;
 strut_s.T_ei=T_ei;
 strut_s.C_bar=C_bar;
+for i=1:size(V2_loc,2)          
+strut_s.stress=kron(eye(ne),[zeros(2,4),eye(2)])*round(V2_loc(:,i),3);     % Moment.
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title('scissor hinge with cables');
+title(['moment-',num2str(i)]);
+strut_s.stress=kron(eye(ne),[1 0 0 0 0 0;0 0 1 0 0 0])*round(V2_loc(:,i),3);     % axial force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['axial force-',num2str(i)]);
+strut_s.stress=kron(eye(ne),[0 1 0 0 0 0;0 0 0 1 0 0])*round(V2_loc(:,i),3);     % shear force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['shear force-',num2str(i)]);
+end

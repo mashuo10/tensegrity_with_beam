@@ -200,26 +200,36 @@ stress=strut_s.stress;
 T_ei=strut_s.T_ei;
 C_bar=strut_s.C_bar;
 ne=size(C_bar,1);
-ro=0.1;      % Ratio is used to control the label position.
-X=zeros(4,ne);
-Y=zeros(4,ne);
+ro=0.2;      % Ratio is used to control the label position.
+X=zeros(4,ne);          % For .x coordinator
+Y=zeros(4,ne);          % For Y coordinate.
+c=zeros(4,ne);          % For color.
 for i=1:ne                  % Here we use PAtCH to draw the stress.
 X(1:2,i)=([1 0 0]*N*C_bar{i}')';
 Y(1:2,i)=([0 1 0]*N*C_bar{i}')';
 temp=[[eye(2),[0;0]]*N*C_bar{i}',flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];
 X(:,i)=temp(1,:)';
 Y(:,i)=temp(2,:)';
-% Label the stress in the  Beginning..
-text([1-ro,ro]*X([4,3],i),[1-ro,ro]*Y([4,3],i),num2str(stress(2*i-1),'%.1e'));%,'Color','r','FontSize',8,'FontWeight','bold'
-% Label the stress in the end.
-text([ro,1-ro]*X([4,3],i),[ro,1-ro]*Y([4,3],i),num2str(stress(2*i),'%.1e'));
 
+%label member force
+if stress(2*i-1)==-stress(2*i)           % If the stress into the end is the same label one number. 
+    c(:,i)=stress(2*i)*ones(4,1);
+% Label the stress in the  Beginning..
+text([.5 .5]*X([4,3],i),[.5 .5]*Y([4,3],i),num2str(stress(2*i),'%.1e'),'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
+else %If else, label two number in both ends.
+    c(:,i)=[stress([2*i-1,2*i]);stress([2*i,2*i-1])];
+% Label the stress in the  Beginning..
+text([1-ro,ro]*X([4,3],i),[1-ro,ro]*Y([4,3],i),num2str(stress(2*i-1),'%.1e'),'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
+% Label the stress in the end.
+text([ro,1-ro]*X([4,3],i),[ro,1-ro]*Y([4,3],i),num2str(stress(2*i),'%.1e'),'Color','k','FontSize',8);
+end
 end
 
 % patch('XData',X,'YData',Y);
-patch(X,Y,'blue','FaceAlpha',.3);
-
-%label member force
+% patch(X,Y,'blue','FaceAlpha',.3);
+ patch(X,Y,c,'FaceAlpha',.5);
+colorbar;
+colormap jet;
 
 
 %% Plot node markers

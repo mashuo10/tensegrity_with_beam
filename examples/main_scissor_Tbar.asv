@@ -171,6 +171,16 @@ A_tsgb=[A_tsgb1;A_tsgb2];
 V2_loc=blkdiag(T_ei{:})'*V2;                % This is the stress in local coordinated.
 
 %%  Plot the stress in self equilibrium tsgb.
-stress_m=kron(eye(ne),[zeros(2,4),eye(2)])*V2(:,1);     % Moment.
-tenseg_plot_stress(N,C_b,C_s,,,,,,stress,T_ei);
-title('scissor hinge with cables');
+stress_m=kron(eye(ne),[zeros(2,4),eye(2)])*round(V2(:,1),3);     % Moment.
+strut_s.stress=stress_m;
+strut_s.T_ei=T_ei;
+strut_s.C_bar=C_bar;
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title('moment');
+strut_s.stress=kron(eye(ne),[1 0 0 0 0 0;0 0 1 0 0 0])*round(V2_loc(:,1),3);     % axial force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title('axial force');
+
+strut_s.stress=kron(eye(ne),[0 1 0 0 0 0;0 0 0 1 0 0])*round(V2_loc(:,1),3);     % shear force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title('shear force');
