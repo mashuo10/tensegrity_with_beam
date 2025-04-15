@@ -115,7 +115,7 @@ end
 
 %% Plot bar member vectors
 
-if ~isempty(C_b)&(isfield(strut_s,'stress'))
+if ~isempty(C_b)&(~isfield(strut_s,'stress'))
     B = N*C_b';
     bar_start_nodes = zeros(3,size(B,2));
     bar_end_nodes = zeros(3,size(B,2));
@@ -156,7 +156,7 @@ end
 
 
 %% Plot string member vectors
-if ~isempty(C_s)&isfield(strut_s,'stress')
+if ~isempty(C_s)&isfield(strut_s,'displs')
     S = N*C_s';
     string_start_nodes = zeros(3,size(S,2));
     string_end_nodes = zeros(3,size(S,2));

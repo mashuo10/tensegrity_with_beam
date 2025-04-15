@@ -26,7 +26,7 @@ n_m=sum(abs(C));        % n_m: No. of element in a node
 tenseg_plot(N,C_b,C_s);
 title('scissor hinge with cables');
 tenseg_plot(N,C,[]);
-%% rigid/pin connection of members
+%% rigid/pin connection of members ，rotation  Relationship
 cnct={0;0;0;0;{[1 3];[2 4]}};       %connection of rigid for 1; pin for 0; otherwise, a cell
 
 % generate the E_nri:relation between rotation angle \theta, and reduced angle
@@ -36,7 +36,7 @@ cnct={0;0;0;0;{[1 3];[2 4]}};       %connection of rigid for 1; pin for 0; other
 
 % generate the relation between rotation angle \theta, and reduced angle
 % \theta_r
-E_nri=cell(nn,1);
+E_ri=cell(nn,1);
 for i=1:nn
     if iscell(cnct{i})
          temp=zeros(n_m(i),numel(cnct{i}));
@@ -44,18 +44,18 @@ for i=1:nn
             I_temp=eye(n_m(i));
             temp(:,j)=sum(I_temp(:,cnct{i}{j}),2);            
         end
-        E_nri{i}=temp;
+        E_ri{i}=temp;
     else if cnct{i}==0
-        E_nri{i}=eye(n_m(i));
+        E_ri{i}=eye(n_m(i));
     else cnct{i}==1
-            E_nri{i}=ones(n_m(i),1);    
+            E_ri{i}=ones(n_m(i),1);    
     end
     end
 end
 
-E_nr=blkdiag(E_nri{:});         % r, for \theta rotation angle
+E_r=blkdiag(E_ri{:});         % r, for \theta rotation angle
 
-n_cr=size(E_nr,2);              % num of \theta reduced
+n_cr=size(E_r,2);              % num of \theta reduced
 
 E_eri=cell(ne,1);               % \theta in a member
 for i=1:ne
@@ -66,7 +66,7 @@ C_temp(i,:)=C_temp(i,:)*2;
 [~,~,v]=find(C_temp);
 row_num1=find(v==-2);
 row_num2=find(v==2);
-E_eri{i}=E_nr([row_num1,row_num2],:);
+E_eri{i}=E_r([row_num1,row_num2],:);
 end
 
 
@@ -79,7 +79,7 @@ end_num=find(C(i,:)==1);       % end node num
 C_bar{i}(1,start_num)=1;
 C_bar{i}(2,end_num)=1;
 end
-
+%% E_ei   Relationship metrics for an element
 E_ei=cell(nn,1);
 for i=1:ne                      % relation between member DOF and minimal coordinate
 E_ei{i}=blkdiag(kron(C_bar{i},eye(2)),E_eri{i});
@@ -101,16 +101,16 @@ E_rbi=cell(nn,1);
 for i=1:nn
 
  if ro_const{i}==0
-        E_rai{i}=eye(size(E_nri{i},2));
+        E_rai{i}=eye(size(E_ri{i},2));
         E_rbi{i}=[];
     else if ro_const{i}==-1
              E_rai{i}=[];
-            E_rbi{i}=ones(size(E_nri{i},2),1);   
+            E_rbi{i}=ones(size(E_ri{i},2),1);   
     
  else %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-         I_temp=eye(size(E_nri{i},2));
+         I_temp=eye(size(E_ri{i},2));
          a_temp=ro_const{i};
- b_temp=setdiff((1:size(E_nri{i},2)),a_temp);
+ b_temp=setdiff((1:size(E_ri{i},2)),a_temp);
  E_rai{i}=I_temp(:,a_temp);
  E_rbi{i}=I_temp(:,b_temp);
     end

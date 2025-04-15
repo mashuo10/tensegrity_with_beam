@@ -1,11 +1,14 @@
 % @ -0,0 +1,47 @@
+%%%% this code calculate the equilibrium matrix, prestress mode of beam-tsg
+%%%% 
 clc;
 close all;
 
 
 %% N C of the structure
 % Manually specify node positions of double layer prism.
-N=[0 0 0;1 1 0;2 0 0;1 -1 0;1.2 0.2 0]';  
+% N=[0 0 0;1 1 0;2 0 0;1 -1 0;1.2 0.2 0]';  
+N=[0 0 0;0 2 0;2 2 0;2 0 0;1 1.2 0]';  
 n=N(:);
 N2=N(1:2,:);                 %3D to 2D
 n2=N2(:);
@@ -139,39 +142,46 @@ A=pi*(r^2-(r-t)^2)*ones(ne,1);
 
 
 
-k_i=cell(ne,1);
+k_i=cell(ne,1);         % Stiffness metrics in global frame
+k_e_i=cell(ne,1);         % Stiffness metrics in local frame
 I_temp=eye(6);
 seq_chg=I_temp([1 2 4 5 3 6],:);
 for i=1:ne
-    k_i{i}=T_ei{i}*[E(i)*A(i)/l(i) 0 0 -E(i)*A(i)/l(i) 0 0
+    k_e_i{i}=[E(i)*A(i)/l(i) 0 0 -E(i)*A(i)/l(i) 0 0
      0 12*E(i)*I(i)*l(i)^-3 6*E(i)*I(i)*l(i)^-2 0 -12*E(i)*I(i)*l(i)^-3 6*E(i)*I(i)*l(i)^-2;
      0 6*E(i)*I(i)*l(i)^-2 4*E(i)*I(i)*l(i)^-1 0 -6*E(i)*I(i)*l(i)^-2 2*E(i)*I(i)*l(i)^-1;
     -E(i)*A(i)/l(i) 0 0 E(i)*A(i)/l(i) 0 0
     0 -12*E(i)*I(i)*l(i)^-3 -6*E(i)*I(i)*l(i)^-2 0 12*E(i)*I(i)*l(i)^-3 -6*E(i)*I(i)*l(i)^-2;
-    0 6*E(i)*I(i)*l(i)^-2 2*E(i)*I(i)*l(i)^-1 0 -6*E(i)*I(i)*l(i)^-2 4*E(i)*I(i)*l(i)^-1]*T_ei{i}';
-
-
+    0 6*E(i)*I(i)*l(i)^-2 2*E(i)*I(i)*l(i)^-1 0 -6*E(i)*I(i)*l(i)^-2 4*E(i)*I(i)*l(i)^-1];
+    
+    k_i{i}=T_ei{i}*k_e_i{i}*T_ei{i}';
 end
 
 %% equilibrium matrix 1
-A_tsgb1=E_qa'*E_e'*kron(eye(ne),seq_chg);%*blkdiag(k_i{:});
+A_tsgb1=E_qa'*E_e'*kron(eye(ne),seq_chg)*blkdiag(T_ei{:});%*blkdiag(k_i{:});
 
 
 %% equilibrium matrix 2
+
+
 A_tsgb2=zeros(3*ne,6*ne);
+
 for i=1:ne
 A_tsgb2(3*i-2:3*i,6*i-5:6*i)=[1 0 0 1 0 0;...
                       0 1 0 0 1 0 ;...
-                      0 0 1 -dyi{i} dxi{i} 1];
+                      0 0 1 0 l(i) 1];
 end
 
 %% SVD of equilibrium matrix
 A_tsgb=[A_tsgb1;A_tsgb2];
 [U1,U2,V1,V2,S1]=tenseg_svd(A_tsgb);        %V2 Is the   Prestress. mode. In global coordinate.
 
-V2_loc=blkdiag(T_ei{:})'*V2;                % This is the stress in local coordinated.
+V2_loc=V2;                % This is the stress in local coordinated.
 
 %%  Plot the stress in self equilibrium tsgb.
+if isfield(strut_s,'displs')
+strut_s=rmfield(strut_s,'displs');
+end
 strut_s.T_ei=T_ei;
 strut_s.C_bar=C_bar;
 for i=1:size(V2_loc,2)          
@@ -185,3 +195,33 @@ strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % 
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
 title(['shear force-',num2str(i)]);
 end
+%% disp axial force
+axial_fs=kron(eye(ne),[[0 0 0 1 0 0]])*round(V2_loc,3);
+disp(1e4*axial_fs(:,3))
+
+
+displacemt=blkdiag(k_e_i{:})\round(V2_loc(:,1),3)
+k_e_i{1}* lsqminnorm(k_e_i{1},V2_loc(1:6,1))-V2_loc(1:6,1)
+dis=lsqminnorm(k_e_i{1},V2_loc(1:6,1));
+
+
+
+%% Plot mechanism mode(use countor plot)
+% Plot the structure to make sure it looks right
+if isfield(strut_s,'stress')
+strut_s=rmfield(strut_s,'stress');
+end
+
+for i=1:size(U2,2)  
+    
+fig=figure
+tenseg_plot_dash(N,C_b,C_s,fig);
+title('scissor hinge with cables');
+N_d=[reshape(E_na*U2(1:size(E_na,2),i),2,[]);zeros(1,nn)];
+strut_s.displs=sqrt(sum(N_d.^2)');
+
+N_motion=N+N_d;
+tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],[],[],strut_s);
+end
+%% Tangent stiffness matrix
+Ktaa_e=E_qa'*E_e'*kron(eye(ne),seq_chg)*blkdiag(T_ei{:})
