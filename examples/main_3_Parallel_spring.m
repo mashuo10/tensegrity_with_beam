@@ -9,13 +9,13 @@ close all;
 %% N C of the structure
 % Manually specify node positions of double layer prism.
 % N=[0 0 0;1 1 0;2 0 0;1 -1 0;1.2 0.2 0]';  
-N=[0 0 0;0 2 0;2 2 0;2 0 0;1 1 0]';  
+N=[0 0 0;2 0 0;1 -2 0;0 -1 0;1 -1 0;2 -1 0]';  
 n=N(:);
 N2=N(1:2,:);                 %3D to 2D
 n2=N2(:);
 % Manually specify connectivity indices.
-C_s_in = [1 2;2 3;3 4;4 1];  % This is indicating that string connection
-C_b_in = [1 5;2 5;5 3;5 4];  % Similarly, this is saying bar 1 connects node 1 to node 2,
+C_s_in = [1 4;2 6;3 5];  % This is indicating that string connection
+C_b_in = [4 5;5 6];  % Similarly, this is saying bar 1 connects node 1 to node 2,
 
 % Convert the above matrices into full connectivity matrices.
 C_b = tenseg_ind2C(C_b_in,N);%%
@@ -28,10 +28,10 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
-title('scissor hinge with cables');
+title(' Paradise stream with leave');
 tenseg_plot(N,C,[]);
 %% rigid/pin connection of members ，rotation  Relationship
-cnct={0;0;0;0;{[1 3];[2 4]}};       %connection of rigid for 1; pin for 0; otherwise, a cell
+cnct={0;0;0;0;{[1 2],[3]};0};       %connection of rigid for 1; pin for 0; otherwise, a cell with vectors with connected member num inside
 
 % generate the E_nri:relation between rotation angle \theta, and reduced angle
 % \theta_r,E_nr: collection of E_nri;E_eri: relation between element DOF
@@ -91,12 +91,10 @@ end
 E_e=cell2mat(E_ei);             % 
 %% Boundary constraints
 % node constraints
-pinned_X=[]; pinned_Y=[]; 
+pinned_X=[1 2 3]'; pinned_Y=[1 2 3]'; 
 [E_na,E_nb,a,b]=tenseg_boundary_2D(pinned_X,pinned_Y,nn);
 % rotation constraints
-ro_const={0;0;0;0;0};       %all constraint for -1; all free for 0; otherwise, a cell vector
-
-
+ro_const={0;0;0;0;0;0};       %all constraint for -1; all free for 0; otherwise, a cell vector
 
 % generate E_ra,E_rb,
 E_rai=cell(nn,1);
@@ -146,7 +144,7 @@ A=pi*(r^2-(r-t)^2)*ones(ne,1);
 k_i=cell(ne,1);         % Stiffness metrics in global frame
 k_e_i=cell(ne,1);         % Stiffness metrics in local frame
 I_temp=eye(6);
-seq_chg=I_temp(:,[1 2 4 5 3 6]);
+seq_chg=I_temp([1 2 4 5 3 6],:);
 for i=1:ne
     k_e_i{i}=[E(i)*A(i)/l(i) 0 0 -E(i)*A(i)/l(i) 0 0
      0 12*E(i)*I(i)*l(i)^-3 6*E(i)*I(i)*l(i)^-2 0 -12*E(i)*I(i)*l(i)^-3 6*E(i)*I(i)*l(i)^-2;
@@ -159,7 +157,7 @@ for i=1:ne
 end
 
 %% equilibrium matrix 1
-A_tsgb1=E_qa'*E_e'*kron(eye(ne),seq_chg')*blkdiag(T_ei{:});%*blkdiag(k_i{:});
+A_tsgb1=E_qa'*E_e'*kron(eye(ne),seq_chg)*blkdiag(T_ei{:});%*blkdiag(k_i{:});
 
 
 %% equilibrium matrix 2
@@ -200,7 +198,8 @@ title(['shear force-',num2str(i)]);
 end
 %% disp axial force
 axial_fs=kron(eye(ne),[[0 0 0 1 0 0]])*round(V2_loc,3);
-disp(1e4*axial_fs(:,3))
+% disp(1e4*axial_fs(:,3))
+
 
 
 
@@ -209,12 +208,8 @@ B_tb1=A_tsgb1';
 B_tb2=zeros(3*ne,6*ne);
 
 for i=1:ne
-% B_tb2(3*i-2:3*i,6*i-5:6*i)=[1 0 0 -1 0 0;...
-%                       0 1 0 0 -1 1/l(i) ;...
-%                       0 0 1 0 0 -1];
-
 B_tb2(3*i-2:3*i,6*i-5:6*i)=[1 0 0 -1 0 0;...
-                      0 -2 -1/l(i) 0 2 -1/l(i) ;...
+                      0 1 0 0 -1 1/l(i) ;...
                       0 0 1 0 0 -1];
 end
 
@@ -224,8 +219,7 @@ B_tb=B_tb2*B_tb1;
 
 V2_loc=V2;  
 
-% V2=[V1(:,end),V2]
-% B_tb*V2
+
 %% Plot mechanism mode(use countor plot)
 % Plot the structure to make sure it looks right
 if isfield(strut_s,'stress')
@@ -244,12 +238,6 @@ N_motion=N+N_d;
 tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],[],[],strut_s);
 
 end
-%% plot zero state configuration %%%%% To be finished
-
-displacemt=blkdiag(k_e_i{:})\round(V2_loc(:,1),3)
-k_e_i{1}* lsqminnorm(k_e_i{1},V2_loc(1:6,1))-V2_loc(1:6,1)
-dis=lsqminnorm(k_e_i{1},V2_loc(1:6,1));
-
 %% Tangent stiffness matrix(only material stiffness)
 Ktaa_e=E_qa'*E_e'*kron(eye(ne),seq_chg)*blkdiag(k_i{:})*kron(eye(ne),seq_chg')*E_e*E_qa;
 Ktaa_e-Ktaa_e'
@@ -285,42 +273,3 @@ strut_s.displs=sqrt(sum(N_d.^2)');
 N_motion=N+N_d;
 tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],title,[],strut_s);
 end
-
-%% statics analysis To be finished
-substep=30;
-
-ind_w=[];w=[];
-
-ind_dqb=[]; dqb0=[];
-ind_dl0=[5,7]'; dl0=[]';
-% ind_dl0_c=[1,2,3]'; dl0_c=[-40,-30,10]';
-[w_t,dqb_t,l0_t,E_qa_new,E_qb_new]=tenseg_load_static_RDT(substep,ind_w,w,ind_dqb,dqb0,ind_dl0,dl0,l0,E_qa,E_qb,gravity,[0;9.8;0],C,mass);
-[nq,nqa]=size(E_qa_new);
-[~,nqb]=size(E_qb_new);
-% modify external force(optional)
-% w_t(:,1:substep/2)=w_t(:,2:2:end); w_t(:,substep/2+1:end)=w_t(:,end)*ones(1,substep/2);
-% dqb_t(:,1:substep/2)=dqb_t(:,2:2:end); dqb_t(:,substep/2+1:end)=dqb_t(:,end)*ones(1,substep/2);
-% l0_t(:,1:substep/2)=l0_t(:,2:2:end); l0_t(:,substep/2+1:end)=l0_t(:,end)*ones(1,substep/2);
-
-% input data
-rdm_q=[0.01*rand(size(E_na,1),1);zeros(size(E_sa,1),1)];  rdm_q([1:4,5*level+[1:4]])=0;% initial form with disturbance
-q_disturb=q+rdm_q;
-data.q=q; data.C=C; data.ne=ne; data.nn=nn; data.E_qa=E_qa_new; data.E_qb=E_qb_new;%data.S=S;
-data.E=E; data.A=A; data.index_b=index_b; data.index_s=index_s;
-data.consti_data=consti_data;   data.material=material; %constitue info
-data.w_t=w_t;  % external force
-data.dqb_t=dqb_t;% forced movement of pinned nodes
-data.l0_t=l0_t;% forced movement of pinned nodes
-data.substep=substep;    % substep
-
-
-data_out=static_solver_RDT(data);
-t_t=data_out.t_t;          %member force in every step
-q_t=data_out.q_t;          %nodal coordinate in every step
-l_t=data_out.l_t;          %member length in every step
-K_t_t= data_out.Kt_t; %tangent stiffness of whole struct.
-
-n_t=q_t(1:3*nn,:);          % nodal coordinate n
-sld_t=q_t(3*nn+1:end,:);    % sliding distance
-
-

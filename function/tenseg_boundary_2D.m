@@ -18,7 +18,7 @@ function [Ia,Ib,a,b]=tenseg_boundary_2D(pinned_X,pinned_Y,nn)
 
 %%
 I=eye(2*nn);
-b=sort([2*pinned_X-2;2*pinned_Y-1]);   %index of pinned nodes
+b=sort([2*pinned_X-1;2*pinned_Y]);   %index of pinned nodes
 a=setdiff((1:2*nn)',b);  %index of free node direction
 Ia=I(:,a);  %free node index
 Ib=I(:,b);  %pinned nod index

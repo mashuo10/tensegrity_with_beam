@@ -8,18 +8,29 @@ close all;
 
 %% N C of the structure
 % Manually specify node positions of double layer prism.
-% N=[0 0 0;1 1 0;2 0 0;1 -1 0;1.2 0.2 0]';  
-N=[0 0 0;0 2 0;2 2 0;2 0 0;1 1 0]';  
+R=10;
+h1=3;
+h2=-2;
+q=3;
+N=zeros(3,q+2)
+N(:,1)=[R,0,0]';
+beta=2*pi/q;
+T_n=[cos(beta), -sin(beta) 0; sin(beta) cos(beta) 0; 0 0 1];
+for i=2:q
+N(:,i)=T_n*N(:,i-1);
+end
+N(:,end-1)=[0 0 h1]';
+N(:,end)=[0 0 h2]';
 n=N(:);
-N2=N(1:2,:);                 %3D to 2D
-n2=N2(:);
+
 % Manually specify connectivity indices.
-C_s_in = [1 2;2 3;3 4;4 1];  % This is indicating that string connection
-C_b_in = [1 5;2 5;5 3;5 4];  % Similarly, this is saying bar 1 connects node 1 to node 2,
+C_t_in = [[1:q]',(q+2)*ones(q,1)];  % This is indicating that string connection
+C_t_in=[C_t_in;q+1,q+2];
+C_b_in = [[1:q]',(q+1)*ones(q,1)];  % Similarly, this is saying bar 1 connects node 1 to node 2,
 
 % Convert the above matrices into full connectivity matrices.
 C_b = tenseg_ind2C(C_b_in,N);%%
-C_s = tenseg_ind2C(C_s_in,N);
+C_s = tenseg_ind2C(C_t_in,N);
 C=[C_b;C_s];
 C_abs=abs(C);
 H=N*C';                     % element's direction matrix
@@ -31,7 +42,7 @@ tenseg_plot(N,C_b,C_s);
 title('scissor hinge with cables');
 tenseg_plot(N,C,[]);
 %% rigid/pin connection of members ，rotation  Relationship
-cnct={0;0;0;0;{[1 3];[2 4]}};       %connection of rigid for 1; pin for 0; otherwise, a cell
+cnct={0;0;0;{[1 2 3],4};0};       %connection of rigid for 1; pin for 0; otherwise, a cell
 
 % generate the E_nri:relation between rotation angle \theta, and reduced angle
 % \theta_r,E_nr: collection of E_nri;E_eri: relation between element DOF
@@ -48,11 +59,11 @@ for i=1:nn
             I_temp=eye(n_m(i));
             temp(:,j)=sum(I_temp(:,cnct{i}{j}),2);            
         end
-        E_ri{i}=temp;
+        E_ri{i}=kron(temp,eye(1));  
     else if cnct{i}==0
         E_ri{i}=eye(n_m(i));
     else cnct{i}==1
-            E_ri{i}=ones(n_m(i),1);    
+            E_ri{i}=kron(ones(n_m(i),1),eye(1));    
     end
     end
 end
@@ -71,6 +82,7 @@ C_temp(i,:)=C_temp(i,:)*2;
 row_num1=find(v==-2);
 row_num2=find(v==2);
 E_eri{i}=E_r([row_num1,row_num2],:);
+
 end
 
 
@@ -86,7 +98,7 @@ end
 %% E_ei   Relationship metrics for an element
 E_ei=cell(nn,1);
 for i=1:ne                      % relation between member DOF and minimal coordinate
-E_ei{i}=blkdiag(kron(C_bar{i},eye(2)),E_eri{i});
+E_ei{i}=blkdiag(kron(C_bar{i},eye(3)),kron(E_eri{i},eye(3)));
 end
 E_e=cell2mat(E_ei);             % 
 %% Boundary constraints
@@ -121,8 +133,8 @@ for i=1:nn
  end 
 end
 
-E_qa=blkdiag(E_na,blkdiag(E_rai{:}));           % relation between free DOF and minimal DOF
-E_qb=blkdiag(E_nb,blkdiag(E_rbi{:}));           % relation between constraint DOF and minimal DOF
+E_qa=blkdiag(E_na,kron(blkdiag(E_rai{:}),eye(3)));           % relation between free DOF and minimal DOF
+E_qb=blkdiag(E_nb,kron(blkdiag(E_rbi{:}),eye(3)));          % relation between constraint DOF and minimal DOF
 %% rotation matrix 
 T_i=cell(ne,1);
 T_ei=cell(ne,1);

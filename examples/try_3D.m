@@ -1,37 +1,30 @@
 % @ -0,0 +1,47 @@
 clc;
 close all;
+clear all;
 
 %% add E I l A
-E=1e5;
-I=1e4;
-l=1;
-A=1e-7;
-
-%% beam with v \theta
-K_v=[12 6 -12 6;
-    6 4 -6 2;
-    -12 -6 12 -6;
-    6 2 -6 4]
-
-[U,S,V] = svd(K_v);
-r=rank(K_v)                      % rank of (A_1g)
-U1=U(:,1:r)
-U2=U(:,r+1:end);        % U1 is C(A_1g); U2 is N(A_1g') mechanism mode
-% S1=S(1:r,1:r);                      % S1 is singular value of A_1g
-V1=V(:,1:r);V2=V(:,r+1:end);        % V1 is C(A_1g'); V2 is N(A_1g) self stress mode
-
-
-%% truss 
-K_u=[-1;1]*[-1 1]
-[U,S,V] = svd(K_u);
-r_u=rank(K_u)                      % rank of (A_1g)
-U1=U(:,1:r_u)
-U2=U(:,r_u+1:end)        % U1 is C(A_1g); U2 is N(A_1g') mechanism mode
-% S1=S(1:r,1:r);                      % S1 is singular value of A_1g
-V1=V(:,1:r_u)
-V2=V(:,r_u+1:end)       % V1 is C(A_1g'); V2 is N(A_1g) self stress mode
-
+syms E G L A Iz Iy Jk
+Ke=[E*A/L 0 0 0 0 0 -E*A/L 0 0 0 0 0;
+    0 12*E*Iz/L^3 0 0 0 6*E*Iz/L^2 0 -12*E*Iz/L^3 0 0 0 6*E*Iz/L^2;
+    0 0 12*E*Iy/L^3 0 6*E*Iy/L^2 0 0 0 -12*E*Iy/L^3 0 6*E*Iy/L^2 0;
+    0 0 0 G*Jk/L 0 0  0 0 0 -G*Jk/L 0 0 ;
+    0 0 6*E*Iy/L^2 0 4*E*Iy/L 0 0 0 -6*E*Iy/L^2 0 2*E*Iy/L 0;
+    0 6*E*Iz/L^2 0 0 0 4*E*Iz/L 0 -6*E*Iz/L^2 0 0 0 2*E*Iz/L;
+    -E*A/L 0 0 0 0 0 E*A/L 0 0 0 0 0;
+    0 -12*E*Iz/L^3 0 0 0 -6*E*Iz/L^2 0 12*E*Iz/L^3 0 0 0 -6*E*Iz/L^2;
+    0 0 -12*E*Iy/L^3 0 -6*E*Iy/L^2 0 0 0 12*E*Iy/L^3 0 -6*E*Iy/L^2 0;
+    0 0 0 -G*Jk/L 0 0  0 0 0 G*Jk/L 0 0 ;
+    0 0 6*E*Iy/L^2 0 2*E*Iy/L 0 0 0 -6*E*Iy/L^2 0 4*E*Iy/L 0;
+    0 6*E*Iz/L^2 0 0 0 2*E*Iz/L 0 -6*E*Iz/L^2 0 0 0 4*E*Iz/L]
+[X,D] = eig(Ke) ;
+r=rank(Ke)                      % rank of (A_1g)
+d=diag(D)
+X1=X(:,1:r)         % Mechanical mode 
+X2=X(:,r+1:end)     % Pre stress mode 
+ 
+mcs=rref(X1')       % Mechanical mode 
+pre=rref(X2')       % Pre stress mode
 %% beam
 K=[1 0 0 -1 0 0
      0 12 6 0 -12 6;
@@ -46,9 +39,65 @@ U2=U(:,r+1:end)        % U1 is C(A_1g); U2 is N(A_1g') mechanism mode
 % S1=S(1:r,1:r);                      % S1 is singular value of A_1g
 V1=V(:,1:r)
 V2=V(:,r+1:end)       % V1 is C(A_1g'); V2 is N(A_1g) self stress mode
-rref(U2')
-%% multipule members: structures;
 
+rref(U2')
+rref(V1')
+%%  Use eigenvalue analysis 
+[X,D] = eig(K) ;
+X1=X(:,1:r)         % Mechanical mode 
+X2=X(:,r+1:end)     % Pre stress mode 
+ 
+mcs=rref(X1')       % Mechanical mode 
+pre=rref(X2')       % Pre stress mode 
+
+
+%% plot  Pre stress mode 
+
+N=[0 0 0;1 0 0]';
+C_b=[-1 1];
+C_s=[];
+ne=1;
+C_bar={[1 0;0 1]};
+T_ei={eye(3)}
+strut_s.T_ei=T_ei;
+strut_s.C_bar=C_bar;
+
+
+if isfield(strut_s,'displs')
+strut_s=rmfield(strut_s,'displs');
+end
+for i=1:size(X2,2)          
+strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(X2(:,i),3);     % Moment.
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['moment-',num2str(i)]);
+axis([0 1 -0.8 0.8]);
+strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(X2(:,i),3);     % axial force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['axial force-',num2str(i)]);
+axis([0 1 -0.8 0.8]);
+strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(X2(:,i),3);     % shear force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['shear force-',num2str(i)]);
+axis([0 1 -0.8 0.8]);
+end
+%% Plot mechanism mode(use countor plot)
+% Plot the structure to make sure it looks right
+if isfield(strut_s,'stress')
+strut_s=rmfield(strut_s,'stress');
+end
+
+for i=1:size(X1,2)  
+    
+fig=figure
+tenseg_plot_dash(N,C_b,C_s,fig);
+title('scissor hinge with cables');
+N_d=[reshape(X1([1 2 4 5],i),2,[]);zeros(1,2)];
+strut_s.displs=sqrt(sum(N_d.^2)');
+
+N_motion=N+N_d;
+tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],[],[],strut_s);
+
+end
 %% N C of the structure
 % Manually specify node positions of double layer prism.
 N=[0 0 0;1 1 0;2 0 0;1 -1 0;1.2 0.2 0]';  
@@ -75,8 +124,10 @@ tenseg_plot(N,C,[]);
 %% rigid/pin connection of members
 cnct={0;0;0;0;{[1 3];[2 4]}};       %connection of rigid for 1; pin for 0; otherwise, a cell
 
-[E_nri,E_nr,E_eri]=tsgb_trans_dof(cnct,nn,n_m)
-
+% generate the E_nri:relation between rotation angle \theta, and reduced angle
+% \theta_r,E_nr: collection of E_nri;E_eri: relation between element DOF
+% and all DOF vector
+% [E_nri,E_nr,E_eri]=tsgb_trans_dof(cnct,nn,n_m);
 
 % generate the relation between rotation angle \theta, and reduced angle
 % \theta_r

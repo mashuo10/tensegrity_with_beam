@@ -1,6 +1,7 @@
 % @ -0,0 +1,47 @@
 clc;
 close all;
+clear all;
 
 %% add E I l A
 E=1e5;
@@ -46,9 +47,65 @@ U2=U(:,r+1:end)        % U1 is C(A_1g); U2 is N(A_1g') mechanism mode
 % S1=S(1:r,1:r);                      % S1 is singular value of A_1g
 V1=V(:,1:r)
 V2=V(:,r+1:end)       % V1 is C(A_1g'); V2 is N(A_1g) self stress mode
-rref(U2')
-%% multipule members: structures;
 
+rref(U2')
+rref(V1')
+%%  Use eigenvalue analysis 
+[X,D] = eig(K) ;
+X1=X(:,1:r)         % Mechanical mode 
+X2=X(:,r+1:end)     % Pre stress mode 
+ 
+mcs=rref(X1')       % Mechanical mode 
+pre=rref(X2')       % Pre stress mode 
+
+
+%% plot  Pre stress mode 
+
+N=[0 0 0;1 0 0]';
+C_b=[-1 1];
+C_s=[];
+ne=1;
+C_bar={[1 0;0 1]};
+T_ei={eye(3)}
+strut_s.T_ei=T_ei;
+strut_s.C_bar=C_bar;
+
+
+if isfield(strut_s,'displs')
+strut_s=rmfield(strut_s,'displs');
+end
+for i=1:size(X2,2)          
+strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(X2(:,i),3);     % Moment.
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['moment-',num2str(i)]);
+axis([0 1 -0.8 0.8]);
+strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(X2(:,i),3);     % axial force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['axial force-',num2str(i)]);
+axis([0 1 -0.8 0.8]);
+strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(X2(:,i),3);     % shear force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['shear force-',num2str(i)]);
+axis([0 1 -0.8 0.8]);
+end
+%% Plot mechanism mode(use countor plot)
+% Plot the structure to make sure it looks right
+if isfield(strut_s,'stress')
+strut_s=rmfield(strut_s,'stress');
+end
+
+for i=1:size(X1,2)  
+    
+fig=figure
+tenseg_plot_dash(N,C_b,C_s,fig);
+title('scissor hinge with cables');
+N_d=[reshape(X1([1 2 4 5],i),2,[]);zeros(1,2)];
+strut_s.displs=sqrt(sum(N_d.^2)');
+
+N_motion=N+N_d;
+tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],[],[],strut_s);
+
+end
 %% N C of the structure
 % Manually specify node positions of double layer prism.
 N=[0 0 0;1 1 0;2 0 0;1 -1 0;1.2 0.2 0]';  
