@@ -196,8 +196,9 @@ if ~isempty(C_s)&isfield(strut_data,'stress')
     end
 end
 %% Plot member force
-T_ei=strut_data.T_ei;
+T_i=strut_data.T_i;
 C_bar=strut_data.C_bar;
+seq_plot=strut_data.seq_plot;
 ne=size(C_bar,1);
 if isfield(strut_data,'stress')
     stress=strut_data.stress;
@@ -211,12 +212,12 @@ for i=1:ne                  % Here we use PAtCH to draw the stress.
 % X(1:2,i)=([1 0 0]*N*C_bar{i}')';
 % Y(1:2,i)=([0 1 0]*N*C_bar{i}')';
 % Z(1:2,i)=([0 0 1]*N*C_bar{i}')';
-temp=[[eye(2),[0;0]]*N*C_bar{i}',flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
-% temp=[N*C_bar{i}',flip(N*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
+% temp=[[eye(2),[0;0]]*N*C_bar{i}',flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
+temp=[N*C_bar{i}',flip(N*C_bar{i}'+T_i{i}(1:3,seq_plot)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
 
 X(:,i)=temp(1,:)';
 Y(:,i)=temp(2,:)';
-Z(:,i)=[[0 0 1]*N*C_bar{i}',flip([0 0 1]*N*C_bar{i}')];
+Z(:,i)=temp(3,:)';
 %label member force
 if stress(2*i-1)==-stress(2*i)           % If the stress into the end is the same label one number. 
     c(:,i)=stress(2*i)*ones(4,1);

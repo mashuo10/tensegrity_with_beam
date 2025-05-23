@@ -103,8 +103,10 @@ end
 E_e=cell2mat(E_ei);             % 
 %% Boundary constraints
 % node constraints
-pinned_X=[]; pinned_Y=[]; 
-[E_na,E_nb,a,b]=tenseg_boundary_2D(pinned_X,pinned_Y,nn);
+pinned_X=[]; pinned_Y=[]; pinned_Z=[]; 
+[E_na,E_nb,a,b]=tenseg_boundary(pinned_X,pinned_Y,pinned_Z,nn);
+% 
+% [E_na,E_nb,a,b]=tenseg_boundary_2D(pinned_X,pinned_Y,nn);
 % rotation constraints
 ro_const={0;0;0;0;0};       %all constraint for -1; all free for 0; otherwise, a cell vector
 
@@ -138,35 +140,49 @@ E_qb=blkdiag(E_nb,kron(blkdiag(E_rbi{:}),eye(3)));          % relation between c
 %% rotation matrix 
 T_i=cell(ne,1);
 T_ei=cell(ne,1);
-dxi=cell(ne,1);
-dyi=cell(ne,1);
+
 for i=1:ne
-dxi{i}=[1 0]*kron(C(i,:),eye(2))*n2;
-dyi{i}=[0 1]*kron(C(i,:),eye(2))*n2;
-T_i{i}=l(i)^-1*[dxi{i} -dyi{i};dyi{i} dxi{i}];
-T_ei{i}=blkdiag(T_i{i},1,T_i{i},1);
+xx=[1 0 0]*kron(C(i,:),eye(3))*n;
+yy=[0 1 0]*kron(C(i,:),eye(3))*n;
+zz=[0 0 1]*kron(C(i,:),eye(3))*n;
+if (abs(xx)<1e-5)&&(abs(yy)<1e-5)
+T_i{i}=[0 0 1;1 0 0;0 1 0]';
+else
+temp=[xx yy zz; -yy xx 0;-xx*zz,-yy*zz,xx^2+yy^2]';
+T_i{i}=temp/diag(sqrt(sum(temp.^2)));
+end
+T_ei{i}=kron(eye(4),T_i{i});          
 end
 %% stiffness matrix
 E=1e5*ones(ne,1);
+mue=0.3;
+G=E/2/(1+mue);
 r=0.1;
 t=0.01;
-I=pi/4*(r^4-(r-t)^4)*ones(ne,1);
+Iy=pi/4*(r^4-(r-t)^4)*ones(ne,1);
+Iz=pi/4*(r^4-(r-t)^4)*ones(ne,1);
+Jk=pi/2*(r^4-(r-t)^4)*ones(ne,1);
 A=pi*(r^2-(r-t)^2)*ones(ne,1);
 
 
 
 k_i=cell(ne,1);         % Stiffness metrics in global frame
 k_e_i=cell(ne,1);         % Stiffness metrics in local frame
-I_temp=eye(6);
-seq_chg=I_temp(:,[1 2 4 5 3 6]);
+I_temp=eye(4);
+seq_chg=kron(I_temp(:,[1 3 2 4]),eye(3));
 for i=1:ne
-    k_e_i{i}=[E(i)*A(i)/l(i) 0 0 -E(i)*A(i)/l(i) 0 0
-     0 12*E(i)*I(i)*l(i)^-3 6*E(i)*I(i)*l(i)^-2 0 -12*E(i)*I(i)*l(i)^-3 6*E(i)*I(i)*l(i)^-2;
-     0 6*E(i)*I(i)*l(i)^-2 4*E(i)*I(i)*l(i)^-1 0 -6*E(i)*I(i)*l(i)^-2 2*E(i)*I(i)*l(i)^-1;
-    -E(i)*A(i)/l(i) 0 0 E(i)*A(i)/l(i) 0 0
-    0 -12*E(i)*I(i)*l(i)^-3 -6*E(i)*I(i)*l(i)^-2 0 12*E(i)*I(i)*l(i)^-3 -6*E(i)*I(i)*l(i)^-2;
-    0 6*E(i)*I(i)*l(i)^-2 2*E(i)*I(i)*l(i)^-1 0 -6*E(i)*I(i)*l(i)^-2 4*E(i)*I(i)*l(i)^-1];
-    
+    k_e_i{i}=[E(i)*A(i)/l(i) 0 0 0 0 0 -E(i)*A(i)/l(i) 0 0 0 0 0;
+    0 12*E(i)*Iz(i)/l(i)^3 0 0 0 6*E(i)*Iz(i)/l(i)^2 0 -12*E(i)*Iz(i)/l(i)^3 0 0 0 6*E(i)*Iz(i)/l(i)^2;
+    0 0 12*E(i)*Iy(i)/l(i)^3 0 6*E(i)*Iy(i)/l(i)^2 0 0 0 -12*E(i)*Iy(i)/l(i)^3 0 6*E(i)*Iy(i)/l(i)^2 0;
+    0 0 0 G(i)*Jk(i)/l(i) 0 0  0 0 0 -G(i)*Jk(i)/l(i) 0 0 ;
+    0 0 6*E(i)*Iy(i)/l(i)^2 0 4*E(i)*Iy(i)/l(i) 0 0 0 -6*E(i)*Iy(i)/l(i)^2 0 2*E(i)*Iy(i)/l(i) 0;
+    0 6*E(i)*Iz(i)/l(i)^2 0 0 0 4*E(i)*Iz(i)/l(i) 0 -6*E(i)*Iz(i)/l(i)^2 0 0 0 2*E(i)*Iz(i)/l(i);
+    -E(i)*A(i)/l(i) 0 0 0 0 0 E(i)*A(i)/l(i) 0 0 0 0 0;
+    0 -12*E(i)*Iz(i)/l(i)^3 0 0 0 -6*E(i)*Iz(i)/l(i)^2 0 12*E(i)*Iz(i)/l(i)^3 0 0 0 -6*E(i)*Iz(i)/l(i)^2;
+    0 0 -12*E(i)*Iy(i)/l(i)^3 0 -6*E(i)*Iy(i)/l(i)^2 0 0 0 12*E(i)*Iy(i)/l(i)^3 0 -6*E(i)*Iy(i)/l(i)^2 0;
+    0 0 0 -G(i)*Jk(i)/l(i) 0 0  0 0 0 G(i)*Jk(i)/l(i) 0 0 ;
+    0 0 6*E(i)*Iy(i)/l(i)^2 0 2*E(i)*Iy(i)/l(i) 0 0 0 -6*E(i)*Iy(i)/l(i)^2 0 4*E(i)*Iy(i)/l(i) 0;
+    0 6*E(i)*Iz(i)/l(i)^2 0 0 0 2*E(i)*Iz(i)/l(i) 0 -6*E(i)*Iz(i)/l(i)^2 0 0 0 4*E(i)*Iz(i)/l(i)];
     k_i{i}=T_ei{i}*k_e_i{i}*T_ei{i}';
 end
 
@@ -177,12 +193,15 @@ A_tsgb1=E_qa'*E_e'*kron(eye(ne),seq_chg')*blkdiag(T_ei{:});%*blkdiag(k_i{:});
 %% equilibrium matrix 2
 
 
-A_tsgb2=zeros(3*ne,6*ne);
+A_tsgb2=zeros(6*ne,12*ne);
 
 for i=1:ne
-A_tsgb2(3*i-2:3*i,6*i-5:6*i)=[1 0 0 1 0 0;...
-                      0 1 0 0 1 0 ;...
-                      0 0 1 0 l(i) 1];
+A_tsgb2(6*i-5:6*i,12*i-11:12*i)=[1 0 0 0 0 0 1 0 0 0 0 0;...
+                      0 1 0 0 0 0 0 1 0 0 0 0;...
+                      0 0 1 0 0 0 0 0 1 0 0 0
+                      0 0 0 1 0 0 0 0 0 1 0 0
+                      0 0 0 0 1 0 0 0 l(i) 0 1 0
+                      0 0 0 0 0 1 0 l(i) 0 0 0 1];
 end
 
 %% SVD of equilibrium matrix
@@ -193,22 +212,43 @@ V2_loc=V2;                % This is the stress in local coordinated.
 
 %%  Plot the stress in self equilibrium tsgb.
 
-strut_s.T_ei=T_ei;
-strut_s.C_bar=C_bar;
+strut_data.T_i=T_i;
+strut_data.C_bar=C_bar;
 
-if isfield(strut_s,'displs')
-strut_s=rmfield(strut_s,'displs');
+if isfield(strut_data,'displs')
+strut_data=rmfield(strut_data,'displs');
 end
+
+mod_c=0.5*max(l);           % Change the plot according to member length 
 for i=1:size(V2_loc,2)          
-strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(V2_loc(:,i),3);     % Moment.
-tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['moment-',num2str(i)]);
-strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(V2_loc(:,i),3);     % axial force
-tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['axial force-',num2str(i)]);
-strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % shear force
-tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['shear force-',num2str(i)]);
+strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 1 0 0])])*round(V2_loc(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Moment x-',num2str(i)]);
+
+strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 0 1 0])])*round(V2_loc(:,i),3);     % Torque X.
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Moment y-',num2str(i)]);
+
+strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 0 0 1])])*round(V2_loc(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 3];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Moment z-',num2str(i)]);
+
+strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[1 0 0 0 0 0])])*round(V2_loc(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Force x-',num2str(i)]);
+
+strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 1 0 0 0 0])])*round(V2_loc(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Force y-',num2str(i)]);
+
+strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 1 0 0 0])])*round(V2_loc(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 3];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Force z-',num2str(i)]);
 end
 %% disp axial force
 axial_fs=kron(eye(ne),[[0 0 0 1 0 0]])*round(V2_loc,3);
@@ -240,8 +280,8 @@ V2_loc=V2;
 % B_tb*V2
 %% Plot mechanism mode(use countor plot)
 % Plot the structure to make sure it looks right
-if isfield(strut_s,'stress')
-strut_s=rmfield(strut_s,'stress');
+if isfield(strut_data,'stress')
+strut_data=rmfield(strut_data,'stress');
 end
 
 for i=1:size(V2,2)  
@@ -250,10 +290,10 @@ fig=figure
 tenseg_plot_dash(N,C_b,C_s,fig);
 title('scissor hinge with cables');
 N_d=[reshape(E_na*V2(1:size(E_na,2),i),2,[]);zeros(1,nn)];
-strut_s.displs=sqrt(sum(N_d.^2)');
+strut_data.displs=sqrt(sum(N_d.^2)');
 
 N_motion=N+N_d;
-tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],[],[],strut_s);
+tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],[],[],strut_data);
 
 end
 %% plot zero state configuration %%%%% To be finished
@@ -280,8 +320,8 @@ ylabel('Frequency (Hz)','fontsize',18,'Interpreter','latex');
 % grid on;
 
 %plot mode shapes
-if isfield(strut_s,'stress')
-strut_s=rmfield(strut_s,'stress');
+if isfield(strut_data,'stress')
+strut_data=rmfield(strut_data,'stress');
 end
 
 for i=1:8
@@ -292,10 +332,10 @@ title=({['Mode',num2str(i)];['\lambda=',num2str(k_sort(i),'%.2f'),'N/m']});
 tenseg_plot_dash(N,C_b,C_s,fig);
 % title('scissor hinge with cables');
 N_d=[reshape(E_na*K_mode_sort(1:size(E_na,2),i),2,[]);zeros(1,nn)];
-strut_s.displs=sqrt(sum(N_d.^2)');
+strut_data.displs=sqrt(sum(N_d.^2)');
 
 N_motion=N+N_d;
-tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],title,[],strut_s);
+tenseg_plot_stress(N_motion,C_b,C_s,fig,[],[],title,[],strut_data);
 end
 
 %% statics analysis To be finished
