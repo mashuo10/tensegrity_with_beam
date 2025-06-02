@@ -28,7 +28,7 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
-title(' Paradise stream with leave');
+title('Beam tensegrity with parallel strings');
 tenseg_plot(N,C,[]);
 %% rigid/pin connection of members ，rotation  Relationship
 cnct={0;0;0;0;{[1 2],[3]};0};       %connection of rigid for 1; pin for 0; otherwise, a cell with vectors with connected member num inside
@@ -196,10 +196,6 @@ strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % 
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
 title(['shear force-',num2str(i)]);
 end
-%% disp axial force
-axial_fs=kron(eye(ne),[[0 0 0 1 0 0]])*round(V2_loc,3);
-% disp(1e4*axial_fs(:,3))
-
 
 
 

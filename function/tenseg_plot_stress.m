@@ -199,8 +199,14 @@ end
 T_ei=strut_data.T_ei;
 C_bar=strut_data.C_bar;
 ne=size(C_bar,1);
+
+H=N*[C_b;C_s]';                     % element's direction matrix
+l=sqrt(diag(H'*H));         % elements' length
+
 if isfield(strut_data,'stress')
     stress=strut_data.stress;
+    [max_s,I]=max(abs(stress));         %find maximum stress and position
+    stress_mod=0.2*l(ceil(I/2))/max_s*stress;
 
 ro=0.2;      % Ratio is used to control the label position.
 X=zeros(4,ne);          % For .x coordinator
@@ -211,7 +217,7 @@ for i=1:ne                  % Here we use PAtCH to draw the stress.
 % X(1:2,i)=([1 0 0]*N*C_bar{i}')';
 % Y(1:2,i)=([0 1 0]*N*C_bar{i}')';
 % Z(1:2,i)=([0 0 1]*N*C_bar{i}')';
-temp=[[eye(2),[0;0]]*N*C_bar{i}',flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
+temp=[[eye(2),[0;0]]*N*C_bar{i}',flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress_mod(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
 % temp=[N*C_bar{i}',flip(N*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
 
 X(:,i)=temp(1,:)';

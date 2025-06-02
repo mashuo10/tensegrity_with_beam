@@ -8,29 +8,31 @@ close all;
 
 %% N C of the structure
 % Manually specify node positions of double layer prism.
-R=10;
-h1=3;
-h2=-2;
+R=1;
+h=2;
 q=3;
-N=zeros(3,q+2)
+N=zeros(3,2*q)
 N(:,1)=[R,0,0]';
 beta=2*pi/q;
-T_n=[cos(beta), -sin(beta) 0; sin(beta) cos(beta) 0; 0 0 1];
+T_n=[cos(beta), -sin(beta) 0; sin(beta) cos(beta) 0; 0 0 1];    % To generate bottom node
 for i=2:q
 N(:,i)=T_n*N(:,i-1);
 end
-N(:,end-1)=[0 0 h1]';
-N(:,end)=[0 0 h2]';
+beta=pi*(0.5-1/q); 	% rotation angle
+T_n=[cos(beta), -sin(beta) 0; sin(beta) cos(beta) 0; 0 0 1];    % To the Top node
+N(:,q+1:end)=T_n*N(:,1:q);
+N(3,q+1:end)=h;
 n=N(:);
 
 % Manually specify connectivity indices.
-C_t_in = [[1:q]',(q+2)*ones(q,1)];  % This is indicating that string connection
-C_t_in=[C_t_in;q+1,q+2];
-C_b_in = [[1:q]',(q+1)*ones(q,1)];  % Similarly, this is saying bar 1 connects node 1 to node 2,
+C_s_in = [[1:q],[q+1:2*q],[1:q];...
+    [2:q,1],[q+2:2*q,q+1],[q+1:2*q]]';  % This is indicating that string connection; Bottom string Top string the diagonal string
+
+C_b_in = [[1:q];[q+2:2*q,q+1]]';  % Similarly, this is saying bar 1 connects node 1 to node 2,
 
 % Convert the above matrices into full connectivity matrices.
 C_b = tenseg_ind2C(C_b_in,N);%%
-C_s = tenseg_ind2C(C_t_in,N);
+C_s = tenseg_ind2C(C_s_in,N);
 C=[C_b;C_s];
 C_abs=abs(C);
 H=N*C';                     % element's direction matrix
@@ -39,10 +41,49 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
-title('scissor hinge with cables');
+title('beam tensegrity prism');
 tenseg_plot(N,C,[]);
+
+%% revise C and N
+% add middle node in beam
+rate=0.5;
+
+B=N*C_b';
+N_add=N(:,1:q)+rate*B;
+N=[N,N_add];               % New nodal coordinat
+n=N(:);
+
+% Manually specify connectivity indices.
+C_s_in = [[1:q],[q+1:2*q],[1:q];...
+    [2:q,1],[q+2:2*q,q+1],[3*q,2*q+1:3*q-1]]';  % This is indicating that string connection; Bottom string Top string the diagonal string
+
+C_b_in = [[1:q,2*q+1:3*q];...
+    [2*q+1:3*q],[q+2:2*q,q+1]]';  % Similarly, this is saying bar 1 connects node 1 to node 2,
+
+% Convert the above matrices into full connectivity matrices.
+C_b = tenseg_ind2C(C_b_in,N);%%
+C_s = tenseg_ind2C(C_s_in,N);
+C=[C_b;C_s];
+C_abs=abs(C);
+H=N*C';                     % element's direction matrix
+l=sqrt(diag(H'*H));         % elements' length
+[ne,nn]=size(C);        % ne:No.of element;nn:No.of node
+n_m=sum(abs(C));        % n_m: No. of element in a node
+% Plot the structure to make sure it looks right
+tenseg_plot(N,C_b,C_s);
+title('beam tensegrity prism');
+
 %% rigid/pin connection of members ，rotation  Relationship
-cnct={0;0;0;{[1 2 3],4};0};       %connection of rigid for 1; pin for 0; otherwise, a cell
+   
+
+cnct=cell(nn,1); %connection of rigid for 1; pin for 0; otherwise, a cell
+for i=[1:2*q]
+    cnct{i}=0;
+end
+for i=2*q+1:3*q
+    cnct{i}={[1 2],3};
+end
+
 
 % generate the E_nri:relation between rotation angle \theta, and reduced angle
 % \theta_r,E_nr: collection of E_nri;E_eri: relation between element DOF
@@ -108,9 +149,11 @@ pinned_X=[]; pinned_Y=[]; pinned_Z=[];
 % 
 % [E_na,E_nb,a,b]=tenseg_boundary_2D(pinned_X,pinned_Y,nn);
 % rotation constraints
-ro_const={0;0;0;0;0};       %all constraint for -1; all free for 0; otherwise, a cell vector
-
-
+ro_const=cell(nn,1);       %all constraint for -1; all free for 0; otherwise, a cell vector
+ 
+for i=[1:3*q]
+    ro_const{i}=0;
+end
 
 % generate E_ra,E_rb,
 E_rai=cell(nn,1);
@@ -209,7 +252,7 @@ A_tsgb=[A_tsgb1;A_tsgb2];
 [U1,U2,V1,V2,S1]=tenseg_svd(A_tsgb);        %V2 Is the   Prestress. mode. In global coordinate.
 
 V2_loc=V2;                % This is the stress in local coordinated.
-
+% V2_loc=V1(:,end);                % This is the stress in local coordinated.
 %%  Plot the stress in self equilibrium tsgb.
 
 strut_data.T_i=T_i;
@@ -251,11 +294,7 @@ strut_data.seq_plot=[1 3];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
 title(['Force z-',num2str(i)]);
 end
-%% disp axial force
-axial_fs=kron(eye(ne),[[0 0 0 1 0 0]])*round(V2_loc,3);
-disp(1e4*axial_fs(:,3))
-
-
+return;
 
 %% mechanism mode
 B_tb1=A_tsgb1';

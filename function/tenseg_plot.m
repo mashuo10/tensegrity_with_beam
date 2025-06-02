@@ -38,8 +38,8 @@ NodeSize = 13; % Size of node marker
 %% Labeling options
 % Write labels? (1: show, 0: suppress)
 LabelNodes =1;
-LabelStrings = 1;
-LabelBars = 1;
+LabelStrings = 0;
+LabelBars = 0;
 
 FontBars = 18; % Font of bar labels
 FontStrings = 10; % Font of string labels
