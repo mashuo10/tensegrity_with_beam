@@ -26,6 +26,7 @@ X2=X(:,r+1:end)     % Pre stress mode
 mcs=rref(X1')       % Mechanical mode 
 pre=rref(X2')       % Pre stress mode
 %% beam
+if 0
 K=[1 0 0 -1 0 0
      0 12 6 0 -12 6;
      0 6 4 0 -6 2;
@@ -50,7 +51,7 @@ X2=X(:,r+1:end)     % Pre stress mode
 mcs=rref(X1')       % Mechanical mode 
 pre=rref(X2')       % Pre stress mode 
 
-
+end
 %% plot  Pre stress mode 
 
 N=[0 0 0;1 0 0]';

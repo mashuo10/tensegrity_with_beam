@@ -287,8 +287,6 @@ strut_s=rmfield(strut_s,'displs');
 end
 
 
-
-
 % 0.5*max(l);           % Change the plot according to member length 
 for i=1:size(V2_loc,2)          
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(V2_loc(:,i),3);     % Moment.

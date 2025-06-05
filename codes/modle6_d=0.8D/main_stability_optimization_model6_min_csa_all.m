@@ -159,4 +159,3 @@ grid
 %     title("杆"+num2str(i));
 %     grid
 % end
-

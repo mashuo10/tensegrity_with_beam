@@ -302,9 +302,9 @@ end
  end
 
 %% Plot the result
-% moment
-styles = {'--ro', '-r^';'--go', '-g^';'--bo', '-b^'}; % 按需扩展
-
+% axial force
+styles = {'--ro', '-ro';'--g^', '-g^';'--bv', '-bv'}; % 按需扩展
+% styles = {'--r', '-r';'--g', '-g';'--b', '-b'}; % 按需扩展
 figure;
 for i=1:3
 semilogy(vec_rate,abs(f_rec_d(i,:)),styles{i,1},'linewidth',2);hold on;
@@ -312,10 +312,23 @@ end
 for i=1:3
 semilogy(vec_rate,abs(f_rec_t(i,:)),styles{i,2},'linewidth',2);hold on;
 end
-legend(strsplit([sprintf('Force in diagonal string (p=%d),',vec_p),sprintf('Force in top string  (p=%d),',vec_p)],','),...
+legend(strsplit([sprintf('Diagonal string (p=%d),',vec_p),sprintf('Top string  (p=%d),',vec_p)],','),...
     'NumColumns', 1, 'location','best','Interpreter', 'latex');
 set(gca,'fontsize',12,'linewidth',1.15);
 ylabel('Member force(m)','fontsize',18);
+xlabel('\gamma','fontsize',18);
+
+% moment
+styles = {'--r', '-ro';'--g', '-g^';'--b', '-bv'}; % 按需扩展
+figure;
+for i=1:3
+semilogy(vec_rate,abs(M_rec(i,:)),styles{i,2},'linewidth',2);hold on;
+end
+
+legend(strsplit(sprintf('Beam (p=%d),',vec_p),','),...
+    'NumColumns', 1, 'location','best','Interpreter', 'latex');
+set(gca,'fontsize',12,'linewidth',1.15);
+ylabel('Bending moment (N·m)','fontsize',18);
 xlabel('\gamma','fontsize',18);
 
 
