@@ -324,7 +324,7 @@ fe=Gp*fe_c;
 
 
 
-%%  Plot the stress in self equilibrium tsgb.
+%%  Plot the designed stress in self equilibrium tsgb.
 
 
 
