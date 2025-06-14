@@ -46,7 +46,7 @@ tenseg_plot(N,C,[]);
 
 %% revise C and N
 % add middle node in beam
-rate=0.5;
+rate=0.8;
 
 B=N*C_b';
 N_add=N(:,1:q)+rate*B;
@@ -253,6 +253,7 @@ A_tsgb=[A_tsgb1;A_tsgb2];
 
 V2_loc=V2;                % This is the stress in local coordinated.
 % V2_loc=V1(:,end);                % This is the stress in local coordinated.
+
 %%  Plot the stress in self equilibrium tsgb.
 
 strut_data.T_i=T_i;
@@ -294,6 +295,83 @@ strut_data.seq_plot=[1 3];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
 title(['Force z-',num2str(i)]);
 end
+
+
+
+
+
+%% Group/Clustered information 
+%generate group index
+
+gr={};     % number of elements in one group
+
+Gp=kron(tenseg_str_gp(gr,C),eye(12));    %generate group matrix
+%% prestress design
+%external force in equilibrium design
+w0=zeros(size(A_tsgb,1),1);
+
+%prestress design
+index_gp=[2*q*12+7];                   % number of groups with designed force; represent the bottom string axial force
+fd=1e2;                        % force in bar is given as -1000
+
+I=eye(size(Gp,2));
+e_d=I(:,index_gp);        % e_d is the matrix to select group of member with designed force
+z=(e_d'*V2)\(fd-e_d'*(pinv(A_tsgb*Gp)*w0));   %self-stress coefficient
+
+fe_c=pinv(A_tsgb*Gp)*w0+V2*z;
+
+fe=Gp*fe_c;
+
+
+
+%%  Plot the stress in self equilibrium tsgb.
+
+
+
+for i=1:size(fe,2)          
+strut_data.stress=kron(eye(ne),[kron(eye(2),[0 0 0 1 0 0])])*round(fe(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Moment x-',num2str(i)]);
+
+strut_data.stress=kron(eye(ne),[kron(eye(2),[0 0 0 0 1 0])])*round(fe(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 3];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Moment y-',num2str(i)]);
+
+strut_data.stress=kron(eye(ne),[kron(eye(2),[0 0 0 0 0 1])])*round(fe(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Moment z-',num2str(i)]);
+
+strut_data.stress=kron(eye(ne),[kron(eye(2),[1 0 0 0 0 0])])*round(fe(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Force x-',num2str(i)]);
+
+strut_data.stress=kron(eye(ne),[kron(eye(2),[0 1 0 0 0 0])])*round(fe(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 2];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Force y-',num2str(i)]);
+
+strut_data.stress=kron(eye(ne),[kron(eye(2),[0 0 1 0 0 0])])*round(fe(:,i),3);     % Torque X.
+strut_data.seq_plot=[1 3];  %plot in xy plane
+tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
+title(['Force z-',num2str(i)]);
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
 return;
 
 %% mechanism mode
