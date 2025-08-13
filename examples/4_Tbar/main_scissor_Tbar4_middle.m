@@ -46,7 +46,8 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
-title('T-bar beam tensegrity');
+% axis off
+% title('T-bar beam tensegrity');
 tenseg_plot(N,C,[]);
 %% rigid/pin connection of members ，rotation  Relationship
 

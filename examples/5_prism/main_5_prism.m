@@ -41,12 +41,13 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
-title('beam tensegrity prism');
+axis off
+% title('beam tensegrity prism');
 tenseg_plot(N,C,[]);
 
 %% revise C and N
 % add middle node in beam
-rate=0.8;
+rate=0.75;
 
 B=N*C_b';
 N_add=N(:,1:q)+rate*B;
@@ -71,7 +72,8 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
-title('beam tensegrity prism');
+% title('beam tensegrity prism');
+axis off
 
 %% rigid/pin connection of members ，rotation  Relationship
    
@@ -268,7 +270,7 @@ for i=1:size(V2_loc,2)
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 1 0 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 2];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Moment x-',num2str(i)]);
+title(['Torque x-',num2str(i)]);
 
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 0 1 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 3];  %plot in xy plane
