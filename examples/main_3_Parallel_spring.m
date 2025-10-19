@@ -28,6 +28,8 @@ l=sqrt(diag(H'*H));         % elements' length
 n_m=sum(abs(C));        % n_m: No. of element in a node
 % Plot the structure to make sure it looks right
 tenseg_plot(N,C_b,C_s);
+xlabel('x (m)');
+ylabel('y (m)');
 title('Beam tensegrity with parallel strings');
 tenseg_plot(N,C,[]);
 %% rigid/pin connection of members ，rotation  Relationship
@@ -188,13 +190,13 @@ end
 for i=1:size(V2_loc,2)          
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(V2_loc(:,i),3);     % Moment.
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['moment-',num2str(i)]);
+title(['moment (N·m)']);
 strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(V2_loc(:,i),3);     % axial force
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['axial force-',num2str(i)]);
+title(['axial force (N)']);
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % shear force
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['shear force-',num2str(i)]);
+title(['shear force (N)']);
 end
 
 

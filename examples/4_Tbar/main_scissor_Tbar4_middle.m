@@ -233,13 +233,13 @@ end
 for i=1:size(V2_loc,2)          
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(V2_loc(:,i),3);     % Moment.
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['moment-',num2str(i)]);
+title(['moment-',num2str(i),' (N·m)']);
 strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(V2_loc(:,i),3);     % axial force
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['axial force-',num2str(i)]);
+title(['axial force-',num2str(i),' (N)']);
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % shear force
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['shear force-',num2str(i)]);
+title(['shear force-',num2str(i),' (N)']);
 end
 
 
@@ -273,11 +273,8 @@ fe=Gp*fe_c;
 
 
 
-
-
-
-V2_loc=fe;                % This is the stress in local coordinated.
-
+%% 
+V2_loc=Gp*V2;
 %%  Plot the stress in self equilibrium tsgb.
 
 strut_s.T_ei=T_ei;
@@ -292,13 +289,40 @@ end
 for i=1:size(V2_loc,2)          
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(V2_loc(:,i),3);     % Moment.
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['moment-',num2str(i)]);
+title(['moment (N·m)']);
 strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(V2_loc(:,i),3);     % axial force
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['axial force-',num2str(i)]);
+title(['axial force (N)']);
 strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % shear force
 tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
-title(['shear force-',num2str(i)]);
+title(['shear force (N)']);
+end
+
+
+
+
+%%  Plot the stress mode in self equilibrium tsgb. group
+V2_loc=fe;                % This is the stress in local coordinated.
+ 
+strut_s.T_ei=T_ei;
+strut_s.C_bar=C_bar;
+
+if isfield(strut_s,'displs')
+strut_s=rmfield(strut_s,'displs');
+end
+
+
+% 0.5*max(l);           % Change the plot according to member length 
+for i=1:size(V2_loc,2)          
+strut_s.stress=kron(eye(ne),[kron(eye(2),[0 0 1])])*round(V2_loc(:,i),3);     % Moment.
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['moment (N·m)']);
+strut_s.stress=kron(eye(ne),[kron(eye(2),[1 0 0])])*round(V2_loc(:,i),3);     % axial force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['axial force (N)']);
+strut_s.stress=kron(eye(ne),[kron(eye(2),[0 1 0])])*round(V2_loc(:,i),3);     % shear force
+tenseg_plot_stress(N,C_b,C_s,[],[],[],[],[],strut_s);
+title(['shear force (N)']);
 end
 
 %% mechanism mode

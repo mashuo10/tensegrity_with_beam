@@ -270,32 +270,32 @@ for i=1:size(V2_loc,2)
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 1 0 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 2];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Torque x-',num2str(i)]);
+title(['Torque x (N·m)']);
 
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 0 1 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 3];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Moment y-',num2str(i)]);
+title(['Moment y (N·m)']);
 
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 0 0 0 1])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 2];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Moment z-',num2str(i)]);
+title(['Moment z  (N·m)']);
 
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[1 0 0 0 0 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 2];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Force x-',num2str(i)]);
+title(['Force x (N)']);
 
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 1 0 0 0 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 2];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Force y-',num2str(i)]);
+title(['Force y (N)']);
 
 strut_data.stress=mod_c*kron(eye(ne),[kron(eye(2),[0 0 1 0 0 0])])*round(V2_loc(:,i),3);     % Torque X.
 strut_data.seq_plot=[1 3];  %plot in xy plane
 tenseg_plot_stress_3d(N,C_b,C_s,[],[],[],[],[],strut_data);
-title(['Force z-',num2str(i)]);
+title(['Force z (N)']);
 end
 
 

@@ -206,7 +206,7 @@ l=sqrt(diag(H'*H));         % elements' length
 if isfield(strut_data,'stress')
     stress=strut_data.stress;
     [max_s,I]=max(abs(stress));         %find maximum stress and position
-    stress_mod=0.2*l(ceil(I/2))/max_s*stress;
+    stress_mod=0.3*l(ceil(I/2))/max_s*stress;
 
 ro=0.2;      % Ratio is used to control the label position.
 X=zeros(4,ne);          % For .x coordinator
@@ -218,8 +218,18 @@ for i=1:ne                  % Here we use PAtCH to draw the stress.
 % Y(1:2,i)=([0 1 0]*N*C_bar{i}')';
 % Z(1:2,i)=([0 0 1]*N*C_bar{i}')';
 temp=[[eye(2),[0;0]]*N*C_bar{i}',flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress_mod(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
+txt_pstion=[.5 .5]*flip(N(1:2,:)*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;0.05+stress_mod(2*i-1:2*i)'*diag([1,-1])],2)';
 % temp=[N*C_bar{i}',flip(N*C_bar{i}'+T_ei{i}(1:2,1:2)*[0 0;stress(2*i-1:2*i)'*diag([1,-1])],2)];%%%%%%%%%%%%%%%%
-
+theta_recovered_rad = atan2(T_ei{i}(2,1), T_ei{i}(1,1));
+angle = rad2deg(theta_recovered_rad);
+ while angle > 90
+        angle  = angle  - 180;
+    end
+    
+    while angle  < -90
+        angle  = angle  + 180;
+    end
+% angle=asind(T_ei{i}(2,1));
 X(:,i)=temp(1,:)';
 Y(:,i)=temp(2,:)';
 Z(:,i)=[[0 0 1]*N*C_bar{i}',flip([0 0 1]*N*C_bar{i}')];
@@ -227,13 +237,15 @@ Z(:,i)=[[0 0 1]*N*C_bar{i}',flip([0 0 1]*N*C_bar{i}')];
 if stress(2*i-1)==-stress(2*i)           % If the stress into the end is the same label one number. 
     c(:,i)=stress(2*i)*ones(4,1);
 % Label the stress in the  Beginning..
-text([.5 .5]*X([4,3],i),[.5 .5]*Y([4,3],i),[.5 .5]*Z([4,3],i),num2str(stress(2*i),'%.1e'),'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
+% text([.5 .5]*X([4,3],i),[.5 .5]*Y([4,3],i)+0.05,[.5 .5]*Z([4,3],i),num2str(stress(2*i-1),'%.1e'),'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
+text(txt_pstion(1),txt_pstion(2),[.5 .5]*Z([4,3],i),num2str(stress(2*i),'%.1e'), 'Rotation', angle,'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
+
 else %If else, label two number in both ends.
     c(:,i)=[stress([2*i-1,2*i]);stress([2*i,2*i-1])];
 % Label the stress in the  Beginning..
-text([1-ro,ro]*X([4,3],i),[1-ro,ro]*Y([4,3],i),[1-ro,ro]*Z([4,3],i),num2str(stress(2*i-1),'%.1e'),'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
+text([1-ro,ro]*X([4,3],i),[1-ro,ro]*Y([4,3],i),[1-ro,ro]*Z([4,3],i),num2str(stress(2*i-1),'%.1e'),'Rotation', angle,'Color','k','FontSize',8);%,'Color','r','FontSize',8,'FontWeight','bold'
 % Label the stress in the end.
-text([ro,1-ro]*X([4,3],i),[ro,1-ro]*Y([4,3],i),[ro,1-ro]*Z([4,3],i),num2str(stress(2*i),'%.1e'),'Color','k','FontSize',8);
+text([ro,1-ro]*X([4,3],i),[ro,1-ro]*Y([4,3],i),[ro,1-ro]*Z([4,3],i),num2str(stress(2*i),'%.1e'),'Rotation', angle,'Color','k','FontSize',8);
 end
 end
 
@@ -299,9 +311,9 @@ if isempty(view_vec)
 end
 view(view_vec)
 
-xlabel('x')
-ylabel('y')
-zlabel('z')
+xlabel('x (m)')
+ylabel('y (m)')
+zlabel('z (m)')
 title(PlotTitle)
 set(gca,'fontsize', 15,'linewidth',1.15)
 set(gca,'ticklength',1.2*get(gca,'ticklength'))

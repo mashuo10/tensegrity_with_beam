@@ -208,6 +208,9 @@ l=sqrt(diag(H'*H));         % elements' length
 if isfield(strut_data,'stress')
     stress=strut_data.stress;
     [max_s,I]=max(abs(stress));         %find maximum stress and position
+    if max_s==0
+        max_s=1
+    end
     stress_mod=0.2*l(ceil(I/2))/max_s*stress;
 
 ro=0.2;      % Ratio is used to control the label position.
@@ -301,9 +304,9 @@ if isempty(view_vec)
 end
 view(view_vec)
 
-xlabel('x')
-ylabel('y')
-zlabel('z')
+xlabel('x (m)')
+ylabel('y (m)')
+zlabel('z (m)')
 title(PlotTitle)
 set(gca,'fontsize', 15,'linewidth',1.15)
 set(gca,'ticklength',1.2*get(gca,'ticklength'))
